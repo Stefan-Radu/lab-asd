@@ -1,4 +1,4 @@
-# DSA - prjects
+# DSA - projects
 
 ### 1st assignment - Comparison between sorting methods
 Implemented a wide range of sorting methods and analyzed their time efficiency.
