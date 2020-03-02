@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cassert>
+#include <cmath>
 
 using namespace std;
 using namespace std::chrono;
@@ -54,6 +55,32 @@ void radixSort(vector < int > &v) {/*{{{*/
 
     for (auto &x : v) {
       buckets[(x >> buck) & 255].push_back(x);
+    }
+
+    int index = 0;
+    for (auto &x : buckets) {
+      for (auto y : x) {
+        v[index ++] = y;
+      }
+      x.clear();
+    }
+  }
+}/*}}}*/
+
+void radixSort(vector < long long > &v, int base) {/*{{{*/
+
+  if (__builtin_popcount(base) != 1) {
+    cerr << "The base is not a power of 2";
+  }
+
+  int step = log2(base);
+
+  vector < vector < int > > buckets(base);
+
+  for (int buck = 0; buck < 63; buck += step) {
+
+    for (auto &x : v) {
+      buckets[(x >> buck) & (base - 1)].push_back(x);
     }
 
     int index = 0;
@@ -231,7 +258,7 @@ void mergeSort(int st, int dr, vector < int > &v) {/*{{{*/
   merge(st, dr, v);
 }/*}}}*/
 
-int partition(int st, int dr, vector < int > &v) {/*{{{*/
+int partitionWithRand(int st, int dr, vector < int > &v) {/*{{{*/
 
   swap(v[st + rand() % (dr - st + 1)], v[dr]);
   int pivot = v[dr], i = st;
@@ -248,9 +275,38 @@ void quickSort(int st, int dr, vector < int > &v) {/*{{{*/
 
   if (st >= dr) return;
 
-  int p = partition(st, dr, v);
+  int p = partitionWithRand(st, dr, v);
   quickSort(st, p - 1, v);
   quickSort(p + 1, dr, v);
+}/*}}}*/
+
+int partitionWithMedian5(int st, int dr, vector < int > &v) {/*{{{*/
+
+  vector < int > aux;
+  for (int i = 1; i <= 5; ++ i) {
+    aux.push_back(st + rand() % (dr - st + 1));
+  }
+
+  sort(aux.begin(), aux.end(), [&](int a, int b) -> bool {return v[a] < v[b];});
+  swap(v[dr], v[aux[2]]);
+
+  int pivot = v[dr], i = st;
+
+  for (int j = st; j <= dr; ++ j) {
+    if (v[j] < pivot) swap(v[j], v[i ++]);
+  }
+
+  swap(v[i], v[dr]);
+  return i;
+}/*}}}*/
+
+void quickSort2(int st, int dr, vector < int > &v) {/*{{{*/
+
+  if (st >= dr) return;
+
+  int p = partitionWithMedian5(st, dr, v);
+  quickSort2(st, p - 1, v);
+  quickSort2(p + 1, dr, v);
 }/*}}}*/
 
 class MinHeap {/*{{{*/
@@ -325,9 +381,7 @@ struct TreapNode {/*{{{*/
   TreapNode *left, *right;
 };/*}}}*/
 
-class Treap {/*{{{*/
-public:
-  Treap() {
+class Treap {/*{{{*/ public: Treap() {
     root = nullptr;
   }
 
@@ -479,7 +533,7 @@ void testSortMethods(const int nrOfElements) {/*{{{*/
   cerr << "Marge Sort has executed in: " << timeElapsed.count() << " milliseconds & " << timeElapsed2.count() << " microseconds\n";
 
 
-  // Quick Sort
+  // Quick Sort - random
 
   aux = toBeSorted;
 
@@ -490,7 +544,21 @@ void testSortMethods(const int nrOfElements) {/*{{{*/
   timeElapsed = duration_cast < milliseconds > (endTime - startTime);
 
   assert(aux == refference);
-  cerr << "Quick Sort has executed in: " << timeElapsed.count() << " milliseconds & " << timeElapsed2.count() << " microseconds\n";
+  cerr << "Quick Sort (with random) has executed in: " << timeElapsed.count() << " milliseconds & " << timeElapsed2.count() << " microseconds\n";
+
+
+  // Quick Sort - random
+
+  aux = toBeSorted;
+
+  startTime = chrono::high_resolution_clock::now();
+  quickSort2(0, nrOfElements - 1, aux);
+  endTime = chrono::high_resolution_clock::now();
+  timeElapsed2 = duration_cast < microseconds > (endTime - startTime);
+  timeElapsed = duration_cast < milliseconds > (endTime - startTime);
+
+  assert(aux == refference);
+  cerr << "Quick Sort (with median of 5) has executed in: " << timeElapsed.count() << " milliseconds & " << timeElapsed2.count() << " microseconds\n";
 
 
   // Heap Sort
@@ -560,14 +628,94 @@ void testSortMethods(const int nrOfElements) {/*{{{*/
   cerr << "Bubble Sort has executed in: " << timeElapsed.count() << " milliseconds & " << timeElapsed2.count() << " microseconds\n";
 }/*}}}*/
 
+void testRadixSort(int nrOfElements, long long maxVal) {/*{{{*/
+
+  /* if (nrOfElements > 5e7) { */
+  /*   cerr << '\n' << nrOfElements << " are too many elements\n"; */
+  /*   return; */
+  /* } */
+
+  cerr << "\nTesting sorting methods for " << nrOfElements << " elements and the max value " << maxVal << "\n\n";
+
+  vector < long long > toBeSorted(nrOfElements);
+  for (auto &x : toBeSorted) x = abs((long long) (rand() * rand()) % (maxVal + 1));
+
+  vector < long long > refference = toBeSorted;
+
+  auto startTime = chrono::high_resolution_clock::now();
+
+  // std::sort
+
+  sort(refference.begin(), refference.end());
+
+  auto endTime = chrono::high_resolution_clock::now();
+  auto timeElapsed2 = duration_cast < microseconds > (endTime - startTime);
+  auto timeElapsed = duration_cast < milliseconds > (endTime - startTime);
+  cerr << "std::sort has executed in: " << timeElapsed.count() << " milliseconds & " << timeElapsed2.count() << " microseconds\n";
+
+
+  // Radix Sort - base 2^4
+
+  auto aux = toBeSorted;
+
+  startTime = chrono::high_resolution_clock::now();
+  radixSort(aux, (1 << 4));
+  endTime = chrono::high_resolution_clock::now();
+  timeElapsed2 = duration_cast < microseconds > (endTime - startTime);
+  timeElapsed = duration_cast < milliseconds > (endTime - startTime);
+
+  assert(aux == refference);
+  cerr << "Radix Sort (base 2^4) has executed in: " << timeElapsed.count() << " milliseconds & " << timeElapsed2.count() << " microseconds\n";
+
+
+  // Radix Sort - base 2 ^ 8
+
+  aux = toBeSorted;
+
+  startTime = chrono::high_resolution_clock::now();
+  radixSort(aux, (1 << 8));
+  endTime = chrono::high_resolution_clock::now();
+  timeElapsed2 = duration_cast < microseconds > (endTime - startTime);
+  timeElapsed = duration_cast < milliseconds > (endTime - startTime);
+
+  assert(aux == refference);
+  cerr << "Radix Sort (base 2^8) has executed in: " << timeElapsed.count() << " milliseconds & " << timeElapsed2.count() << " microseconds\n";
+
+
+  // Radix Sort - base 2 ^ 16
+
+  aux = toBeSorted;
+
+  startTime = chrono::high_resolution_clock::now();
+  radixSort(aux, (1 << 16));
+  endTime = chrono::high_resolution_clock::now();
+  timeElapsed2 = duration_cast < microseconds > (endTime - startTime);
+  timeElapsed = duration_cast < milliseconds > (endTime - startTime);
+
+  assert(aux == refference);
+  cerr << "Radix Sort (base 2^16) has executed in: " << timeElapsed.count() << " milliseconds & " << timeElapsed2.count() << " microseconds\n";
+}/*}}}*/
+
 int main() {
-  srand(27);
+
+  srand(time(0));
+
   testSortMethods(10);
   testSortMethods(100);
   testSortMethods(1000);
   testSortMethods(3e4);
   testSortMethods(1e6);
   testSortMethods(1e7);
-  /* testSortMethods(5e7); */
+  testSortMethods(5e7);
   testSortMethods(1e8);
+
+  testRadixSort(1e6, 1e6);
+  testRadixSort(1e6, 1e9);
+  testRadixSort(1e6, 1e18);
+  testRadixSort(1e7, 1e6);
+  testRadixSort(1e7, 1e9);
+  testRadixSort(1e7, 1e18);
+  testRadixSort(5e7, 1e6);
+  testRadixSort(5e7, 1e12);
+  testRadixSort(5e7, 1e18);
 }
