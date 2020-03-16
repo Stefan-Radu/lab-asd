@@ -1,14 +1,15 @@
 # DSA - projects
 
 ### [1st assignment](1st_assignment) - Comparison between sorting algorithms
-Implemented a wide range of sorting methods and analyzed their time efficiency.
-Among the sorting algorithms used:
-* Min Sort
-* Bubble Sort
-* Count Sort
-* Radix Sort
-* SkipList Sort
-* Merge Sort
-* Quick Sort
-* Heap Sort
-* Treap Sort
+Implemented a wide range of sorting methods and analysed their time efficiency.
+Sorting algorithms used:
+1. std::sort (used as reference) 
+1. Min Sort
+1. Bubble Sort
+1. Count Sort
+1. Radix Sort
+1. SkipList Sort
+1. Merge Sort
+1. Quick Sort
+1. Heap Sort
+1. Treap Sort
